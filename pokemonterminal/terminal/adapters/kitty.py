@@ -67,15 +67,20 @@ def _load_dark_thresholds():
     data_path = Path(__file__).resolve().parents[2] / "Data" / "pokemon.txt"
     by_id = {}
     by_name = {}
+    id_counter = 1
     with open(data_path, "r", encoding="utf-8") as data_file:
-        for i, line in enumerate(data_file, start=1):
+        for line in data_file:
             pokemon_data = line.split()
             if len(pokemon_data) < 2:
                 continue
             name = pokemon_data[0].lower()
-            threshold = float(pokemon_data[1])
+            try:
+                threshold = float(pokemon_data[1])
+            except (ValueError, TypeError):
+                continue
             by_name[name] = threshold
-            by_id[f"{i:03d}"] = threshold
+            by_id[f"{id_counter:03d}"] = threshold
+            id_counter += 1
     return by_id, by_name
 
 

@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 
 from pokemonterminal.terminal.adapters import kitty
@@ -95,3 +96,21 @@ def test_kitty_convert_uses_cache_directory_tmp_file(tmp_path, monkeypatch):
     assert called["dir"] == str(target.parent)
     assert out == str(target)
     assert target.exists()
+
+
+def test_load_dark_thresholds_skips_malformed_and_assigns_dense_ids(monkeypatch):
+    data = "alpha 0.1\n\nbeta nope\ngamma 0.8\n"
+    real_open = open
+
+    def fake_open(path, *args, **kwargs):
+        if str(path).endswith("pokemon.txt"):
+            return io.StringIO(data)
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr("builtins.open", fake_open)
+    kitty._load_dark_thresholds.cache_clear()
+    by_id, by_name = kitty._load_dark_thresholds()
+    kitty._load_dark_thresholds.cache_clear()
+
+    assert by_id == {"001": 0.1, "002": 0.8}
+    assert by_name == {"alpha": 0.1, "gamma": 0.8}

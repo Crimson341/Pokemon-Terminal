@@ -5,6 +5,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -17,12 +18,31 @@ CONFIG_DIR = Path.home() / ".config" / "pokemon-terminal"
 STATE_FILE = CONFIG_DIR / "kitty-profile.json"
 KITTY_CONF = Path.home() / ".config" / "kitty" / "kitty.conf"
 ZSHRC = Path.home() / ".zshrc"
-VSCODE_SETTINGS = Path.home() / "Library" / "Application Support" / "Code" / "User" / "settings.json"
 
 KITTY_BLOCK_START = "# >>> pokemon-terminal kitty >>>"
 KITTY_BLOCK_END = "# <<< pokemon-terminal kitty <<<"
 ZSH_BLOCK_START = "# >>> pokemon-terminal kitty autoload >>>"
 ZSH_BLOCK_END = "# <<< pokemon-terminal kitty autoload <<<"
+VSCODE_BLOCK_START = "// >>> pokemon-terminal vscode >>>"
+VSCODE_BLOCK_END = "// <<< pokemon-terminal vscode <<<"
+
+
+def _detect_vscode_settings_target(platform_name=None):
+    platform_name = platform_name or sys.platform
+    if platform_name == "darwin":
+        return (
+            Path.home() / "Library" / "Application Support" / "Code" / "User" / "settings.json",
+            "osx",
+        )
+    if platform_name.startswith("linux"):
+        return (
+            Path.home() / ".config" / "Code" / "User" / "settings.json",
+            "linux",
+        )
+    return None, None
+
+
+VSCODE_SETTINGS, _VSCODE_PROFILE_PLATFORM = _detect_vscode_settings_target()
 
 
 def _read_json_file(path: Path):
@@ -114,10 +134,34 @@ def _replace_or_append_block(path: Path, start: str, end: str, block_lines):
         with open(path, "r", encoding="utf-8") as handle:
             content = handle.read()
     block = "\n".join([start, *block_lines, end]) + "\n"
-    if start in content and end in content:
-        pattern = re.compile(re.escape(start) + r".*?" + re.escape(end) + r"\n?", re.DOTALL)
-        content = pattern.sub(block, content)
-    else:
+    has_start = start in content
+    has_end = end in content
+    replaced = False
+
+    if has_start and has_end:
+        start_idx = content.find(start)
+        end_idx = content.find(end, start_idx + len(start))
+        if end_idx != -1:
+            cut_end = end_idx + len(end)
+            if cut_end < len(content) and content[cut_end] == "\n":
+                cut_end += 1
+            content = content[:start_idx] + block + content[cut_end:]
+            replaced = True
+        else:
+            has_end = False
+
+    if not replaced and has_start and not has_end:
+        print(f"Warning: found orphan start marker in {path}; repairing.")
+        content = content[:content.find(start)]
+
+    if not replaced and has_end and not has_start:
+        print(f"Warning: found orphan end marker in {path}; repairing.")
+        cut_start = content.find(end) + len(end)
+        if cut_start < len(content) and content[cut_start] == "\n":
+            cut_start += 1
+        content = content[cut_start:]
+
+    if not replaced:
         if content and not content.endswith("\n"):
             content += "\n"
         content += ("\n" if content else "") + block
@@ -126,24 +170,93 @@ def _replace_or_append_block(path: Path, start: str, end: str, block_lines):
         handle.write(content)
 
 
+def _strip_orphan_or_existing_marker_block(content: str, start: str, end: str, path: Path):
+    has_start = start in content
+    has_end = end in content
+
+    if has_start and has_end:
+        start_idx = content.find(start)
+        end_idx = content.find(end, start_idx + len(start))
+        if end_idx != -1:
+            cut_end = end_idx + len(end)
+            if cut_end < len(content) and content[cut_end] == "\n":
+                cut_end += 1
+            return content[:start_idx] + content[cut_end:]
+        has_end = False
+
+    if has_start and not has_end:
+        print(f"Warning: found orphan start marker in {path}; repairing.")
+        return content[:content.find(start)]
+
+    if has_end and not has_start:
+        print(f"Warning: found orphan end marker in {path}; repairing.")
+        cut_start = content.find(end) + len(end)
+        if cut_start < len(content) and content[cut_start] == "\n":
+            cut_start += 1
+        return content[cut_start:]
+
+    return content
+
+
+def _insert_vscode_settings_block(content: str, profile_platform: str, path: Path):
+    if not content.strip():
+        content = "{}\n"
+
+    content = _strip_orphan_or_existing_marker_block(
+        content, VSCODE_BLOCK_START, VSCODE_BLOCK_END, path
+    )
+
+    object_start = content.find("{")
+    object_end = content.rfind("}")
+    if object_start == -1 or object_end == -1 or object_start > object_end:
+        print(f"Skipping VS Code settings update (unexpected JSON structure in {path}).")
+        return None
+
+    block = "\n".join(
+        [
+            f"  {VSCODE_BLOCK_START}",
+            f'  "terminal.integrated.profiles.{profile_platform}": {{',
+            '    "kitty": {',
+            '      "path": "kitty"',
+            "    }",
+            "  },",
+            f'  "terminal.integrated.defaultProfile.{profile_platform}": "kitty"',
+            f"  {VSCODE_BLOCK_END}",
+        ]
+    )
+
+    head = content[:object_end].rstrip()
+    tail = content[object_end:]
+    body = content[object_start + 1:object_end].strip()
+    if body and not head.endswith(","):
+        head += ","
+    updated = head + "\n" + block + "\n" + tail.lstrip()
+    if not updated.endswith("\n"):
+        updated += "\n"
+    return updated
+
+
 def _configure_vscode_default_kitty():
-    settings = _read_jsonc_file(VSCODE_SETTINGS)
-    if settings is None:
-        print(f"Skipping VS Code settings update (could not parse {VSCODE_SETTINGS}).")
+    if VSCODE_SETTINGS is None or _VSCODE_PROFILE_PLATFORM is None:
+        print("Skipping VS Code settings update (unsupported platform).")
         return False
-    profiles_key = "terminal.integrated.profiles.osx"
-    default_key = "terminal.integrated.defaultProfile.osx"
-    profiles = settings.get(profiles_key)
-    if not isinstance(profiles, dict):
-        profiles = {}
-    kitty_profile = profiles.get("kitty")
-    if not isinstance(kitty_profile, dict):
-        kitty_profile = {}
-    kitty_profile.setdefault("path", "kitty")
-    profiles["kitty"] = kitty_profile
-    settings[profiles_key] = profiles
-    settings[default_key] = "kitty"
-    _write_json_file(VSCODE_SETTINGS, settings)
+
+    raw = "{}\n"
+    if VSCODE_SETTINGS.exists():
+        try:
+            with open(VSCODE_SETTINGS, "r", encoding="utf-8") as handle:
+                raw = handle.read()
+        except OSError:
+            print(f"Skipping VS Code settings update (unable to read {VSCODE_SETTINGS}).")
+            return False
+
+    updated = _insert_vscode_settings_block(raw, _VSCODE_PROFILE_PLATFORM, VSCODE_SETTINGS)
+    if updated is None:
+        return False
+
+    VSCODE_SETTINGS.parent.mkdir(parents=True, exist_ok=True)
+    with open(VSCODE_SETTINGS, "w", encoding="utf-8") as handle:
+        handle.write(updated)
     return True
 
 
@@ -233,48 +346,52 @@ def main():
         text_mode = "auto"
     password = str(existing.get("kitty_rc_password", "missingno"))
 
-    if _prompt_yes_no("Set Kitty as default terminal profile in VS Code?", True):
-        if _configure_vscode_default_kitty():
-            print(f"Updated {VSCODE_SETTINGS}")
+    try:
+        if _prompt_yes_no("Set Kitty as default terminal profile in VS Code?", True):
+            if _configure_vscode_default_kitty():
+                print(f"Updated {VSCODE_SETTINGS}")
 
-    if _prompt_yes_no("Configure Kitty remote control block in kitty.conf?", True):
-        password = _prompt("Kitty remote-control password", password)
-        _configure_kitty_remote_control(password)
-        print(f"Updated {KITTY_CONF}")
+        if _prompt_yes_no("Configure Kitty remote control block in kitty.conf?", True):
+            password = _prompt("Kitty remote-control password", password)
+            _configure_kitty_remote_control(password)
+            print(f"Updated {KITTY_CONF}")
 
-    while True:
-        print("")
-        print(f"Current selector: {selector or '(random each start)'}")
-        print(f"Current text mode: {text_mode}")
-        print("Actions: [p] preview pokemon  [r] random preview  [m] text mode  [s] save+enable  [q] quit")
-        choice = input("Choose action: ").strip().lower()
+        while True:
+            print("")
+            print(f"Current selector: {selector or '(random each start)'}")
+            print(f"Current text mode: {text_mode}")
+            print("Actions: [p] preview pokemon  [r] random preview  [m] text mode  [s] save+enable  [q] quit")
+            choice = input("Choose action: ").strip().lower()
 
-        if choice == "p":
-            selector = input("Pokemon name or id: ").strip().lower()
-            if selector:
+            if choice == "p":
+                selector = input("Pokemon name or id: ").strip().lower()
+                if selector:
+                    _run_preview(selector, text_mode, password)
+            elif choice == "r":
+                selector = ""
                 _run_preview(selector, text_mode, password)
-        elif choice == "r":
-            selector = ""
-            _run_preview(selector, text_mode, password)
-        elif choice == "m":
-            mode = _prompt("Text mode (auto/light/dark)", text_mode).lower()
-            if mode in {"auto", "light", "dark"}:
-                text_mode = mode
-                _run_preview(selector, text_mode, password)
+            elif choice == "m":
+                mode = _prompt("Text mode (auto/light/dark)", text_mode).lower()
+                if mode in {"auto", "light", "dark"}:
+                    text_mode = mode
+                    _run_preview(selector, text_mode, password)
+                else:
+                    print("Invalid mode.")
+            elif choice == "s":
+                _save_state(selector, text_mode, password)
+                _install_zsh_autoload_hook()
+                print(f"Saved profile: {STATE_FILE}")
+                print(f"Installed autoload hook in {ZSHRC}")
+                print("Open a new Kitty tab/window to see the saved theme applied automatically.")
+                return 0
+            elif choice == "q":
+                print("No changes saved.")
+                return 0
             else:
-                print("Invalid mode.")
-        elif choice == "s":
-            _save_state(selector, text_mode, password)
-            _install_zsh_autoload_hook()
-            print(f"Saved profile: {STATE_FILE}")
-            print(f"Installed autoload hook in {ZSHRC}")
-            print("Open a new Kitty tab/window to see the saved theme applied automatically.")
-            return 0
-        elif choice == "q":
-            print("No changes saved.")
-            return 0
-        else:
-            print("Invalid option.")
+                print("Invalid option.")
+    except (EOFError, KeyboardInterrupt):
+        print("\nNo changes saved.")
+        return 0
 
 
 if __name__ == "__main__":

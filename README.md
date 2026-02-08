@@ -1,6 +1,15 @@
 ﻿# Pokemon-Terminal
 
-[![Build Status](https://travis-ci.org/LazoCoder/Pokemon-Terminal.svg?branch=master)](https://travis-ci.org/LazoCoder/Pokemon-Terminal)
+[![CI](https://github.com/LazoCoder/Pokemon-Terminal/actions/workflows/ci.yml/badge.svg)](https://github.com/LazoCoder/Pokemon-Terminal/actions/workflows/ci.yml)
+
+## Fork Notice
+
+This repository is an actively maintained fork of the original
+[LazoCoder/Pokemon-Terminal](https://github.com/LazoCoder/Pokemon-Terminal).
+
+The goal of this fork is to keep the project modern, stable, and easy to
+install on current Python and Node environments while preserving the original
+CLI experience.
 
 <p align="center">
     <img src="https://i.imgur.com/n34fXyp.png" width="700"/> <!--Pikachu-->
@@ -41,9 +50,9 @@
 
 # Installation
 
-Install Python 3.7 or higher:
+Install Python 3.10 or higher:
 - [For Mac](https://www.python.org/downloads/mac-osx/)
-- For Windows: [desktop](https://www.python.org/downloads/windows/) or [Microsoft Store](https://www.microsoft.com/p/python-38/9mssztt1n39l)
+- For Windows: [desktop](https://www.python.org/downloads/windows/) or [Microsoft Store](https://www.microsoft.com/store/productId/9NCVDN91XZQP)
 - [For Ubuntu](https://askubuntu.com/a/865569)
 - [For Arch Linux](https://www.archlinux.org/packages/extra/x86_64/python/)
 - Not all compatible distros are named here, but a quick Google search should give you instructions for your distribution of choice.
@@ -60,13 +69,16 @@ You can then proceed with one of the following methods for installation:
 - [Arch Linux User Repository package (System-wide)](https://aur.archlinux.org/packages/pokemon-terminal-git/) (maintained by [@sylveon](https://github.com/sylveon))
 - [pip (System-wide or Per-User)](#pip)
 - [npm (Per-User only)](#npm)
-- [Distutils (System-wide or Per-User)](#distutils)
 
 ## pip
 
 Linux users: Your distro might include `pip` in a different package than Python, make sure to have that installed.
 
-Run `pip3 install git+https://github.com/LazoCoder/Pokemon-Terminal.git`.
+Run `pip install pokemon-terminal`.
+
+If you need the latest unreleased version from this repository, run:
+
+`pip install git+https://github.com/LazoCoder/Pokemon-Terminal.git`.
 
 If you want a system-wide install, run the command as superuser or administrator.
 
@@ -82,21 +94,15 @@ When the command completes, it's installed and ready to go!
 
 ## npm
 
-Obviously requires to have [Node.js](https://nodejs.org/) installed.
+Requires [Node.js](https://nodejs.org/) and Python.
 
-You can install in any (npm-supported) OS using `npm install --global pokemon-terminal`. That's it, you're done!
+Install with:
 
-Make sure you also have Python installed, `npm` won't automagically do that for you.
+`npm install --global pokemon-terminal`
 
-## Distutils
+The npm package keeps the same commands (`pokemon`, `ichooseyou`) and uses a Node wrapper that invokes the Python entrypoint.
 
-This doesn't works on Microsoft Store installations of Python.
-
-You can clone or [download](https://github.com/LazoCoder/Pokemon-Terminal/archive/master.zip) this repo, and run `python3 setup.py install` at the root of the repo.
-
-If you want a system-wide install, run the command as superuser or administrator.
-
-If you want a per-user install, append the `--user` flag. Look at the pip directives to add a per-user install to your `PATH`.
+If Python is missing from your environment, the wrapper prints a clear setup message and exits.
 
 ## Development setup (repo clone)
 
@@ -106,15 +112,44 @@ For local development from this repository, you can use:
 make setup
 ```
 
-This creates `.venv`, installs the package in editable mode, and installs `pytest`.
+This creates `.venv` and installs all development dependencies from `.[dev]`.
+
+## Auto Setup Scripts
+
+Use the following automation commands from the repo root:
+
+- `make setup`: bootstraps a local dev environment (`.venv`) and installs
+  editable + dev dependencies.
+- `make kitty-setup`: runs the interactive Kitty + VS Code setup wizard
+  (`scripts/kitty_setup.py`).
+
+Fast bootstrap + validation:
+
+```bash
+make setup && make lint && make test
+```
 
 Useful follow-up commands:
 
 ```bash
+make lint
 make test
+make build
+make package-check
 make dry-run
 make kitty-setup
 ```
+
+## Release Notes
+
+- [v2.0.0 modernization notes](docs/releases/v2.0.0.md)
+
+## Future Plans
+
+- Keep dependency/tooling updates current through CI and Dependabot.
+- Continue improving cross-platform terminal and wallpaper adapter behavior.
+- Expand setup automation and onboarding docs for new contributors.
+- Extend data/media support in future releases while keeping CLI compatibility.
 
 # Usage
 
@@ -174,6 +209,36 @@ Not setting any filters will get a completely random pokemon
 Example:
 
 ![](https://i.imgur.com/DfA2lcd.gif)
+
+## Example Gallery
+
+### Terminal Background Samples
+
+Pikachu:
+
+![](https://i.imgur.com/n34fXyp.png)
+
+Bulbasaur:
+
+![](https://i.imgur.com/bLajJfw.png)
+
+Charizard:
+
+![](https://i.imgur.com/54fvKOQ.png)
+
+Rayquaza:
+
+![](https://i.imgur.com/3YSj8MB.png)
+
+### Transparency + Readability Examples
+
+iTerm2 sample result:
+
+![](https://i.imgur.com/82DAT97.jpg)
+
+Windows Terminal sample result:
+
+![](https://i.imgur.com/DZbiQHf.png)
 
 # Tips, tricks and common issues
 

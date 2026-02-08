@@ -1,6 +1,6 @@
 ﻿# Pokemon-Terminal
 
-[![CI](https://github.com/LazoCoder/Pokemon-Terminal/actions/workflows/ci.yml/badge.svg)](https://github.com/LazoCoder/Pokemon-Terminal/actions/workflows/ci.yml)
+[![CI](https://github.com/Crimson341/Pokemon-Terminal/actions/workflows/ci.yml/badge.svg)](https://github.com/Crimson341/Pokemon-Terminal/actions/workflows/ci.yml)
 
 ## Fork Notice
 
@@ -78,7 +78,7 @@ Run `pip install pokemon-terminal`.
 
 If you need the latest unreleased version from this repository, run:
 
-`pip install git+https://github.com/LazoCoder/Pokemon-Terminal.git`.
+`pip install git+https://github.com/Crimson341/Pokemon-Terminal.git`.
 
 If you want a system-wide install, run the command as superuser or administrator.
 
@@ -216,29 +216,29 @@ Example:
 
 Pikachu:
 
-![](https://i.imgur.com/n34fXyp.png)
+![Pikachu terminal background example](https://i.imgur.com/n34fXyp.png)
 
 Bulbasaur:
 
-![](https://i.imgur.com/bLajJfw.png)
+![Bulbasaur terminal background example](https://i.imgur.com/bLajJfw.png)
 
 Charizard:
 
-![](https://i.imgur.com/54fvKOQ.png)
+![Charizard terminal background example](https://i.imgur.com/54fvKOQ.png)
 
 Rayquaza:
 
-![](https://i.imgur.com/3YSj8MB.png)
+![Rayquaza terminal background example](https://i.imgur.com/3YSj8MB.png)
 
 ### Transparency + Readability Examples
 
 iTerm2 sample result:
 
-![](https://i.imgur.com/82DAT97.jpg)
+![iTerm2 transparency and readability sample](https://i.imgur.com/82DAT97.jpg)
 
 Windows Terminal sample result:
 
-![](https://i.imgur.com/DZbiQHf.png)
+![Windows Terminal transparency and readability sample](https://i.imgur.com/DZbiQHf.png)
 
 # Tips, tricks and common issues
 

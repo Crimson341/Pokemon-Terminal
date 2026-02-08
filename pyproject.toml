@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=81", "wheel"]
+requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,7 +12,7 @@ license = "GPL-3.0-only"
 authors = [{ name = "LazoCoder" }]
 keywords = ["pokemon", "terminal", "theme", "themes"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
     "Environment :: Console",
     "Topic :: Utilities",
@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/LazoCoder/Pokemon-Terminal"
-Repository = "https://github.com/LazoCoder/Pokemon-Terminal"
-Issues = "https://github.com/LazoCoder/Pokemon-Terminal/issues"
+Homepage = "https://github.com/Crimson341/Pokemon-Terminal"
+Repository = "https://github.com/Crimson341/Pokemon-Terminal"
+Issues = "https://github.com/Crimson341/Pokemon-Terminal/issues"
 
 [project.scripts]
 pokemon = "pokemonterminal.main:main"

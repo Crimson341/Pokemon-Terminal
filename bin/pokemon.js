@@ -8,8 +8,24 @@ const USER_ARGS = process.argv.slice(2);
 
 function commandExists(command, args = []) {
   try {
-    const result = spawnSync(command, [...args, "--version"], { stdio: "ignore" });
-    return result.status === 0;
+    const result = spawnSync(command, [...args, "--version"], { encoding: "utf8" });
+    if (result.status !== 0 || result.error) {
+      return false;
+    }
+
+    const output = `${result.stdout || ""}\n${result.stderr || ""}`;
+    const match = output.match(/Python\s+(\d+)\.(\d+)(?:\.\d+)?/i);
+    if (!match) {
+      return false;
+    }
+
+    const major = Number.parseInt(match[1], 10);
+    const minor = Number.parseInt(match[2], 10);
+    if (Number.isNaN(major) || Number.isNaN(minor)) {
+      return false;
+    }
+
+    return major > 3 || (major === 3 && minor >= 10);
   } catch {
     return false;
   }
@@ -65,4 +81,3 @@ child.on("close", (code, signal) => {
   }
   process.exit(code ?? 1);
 });
-

@@ -53,5 +53,5 @@ jobs:
           cd "$TMP_DIR"
           npm init -y >/dev/null 2>&1
           npm install ./pokemon-terminal-*.tgz >/dev/null
-          ./node_modules/.bin/pokemon --help >/dev/null
-          ./node_modules/.bin/ichooseyou --help >/dev/null
+          npx --no-install pokemon --help >/dev/null
+          npx --no-install ichooseyou --help >/dev/null

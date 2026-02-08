@@ -98,6 +98,24 @@ If you want a system-wide install, run the command as superuser or administrator
 
 If you want a per-user install, append the `--user` flag. Look at the pip directives to add a per-user install to your `PATH`.
 
+## Development setup (repo clone)
+
+For local development from this repository, you can use:
+
+```bash
+make setup
+```
+
+This creates `.venv`, installs the package in editable mode, and installs `pytest`.
+
+Useful follow-up commands:
+
+```bash
+make test
+make dry-run
+make kitty-setup
+```
+
 # Usage
 
 ```
@@ -209,15 +227,39 @@ Here's an example of how to set it up in `./config/kitty/kitty.conf`:
 # Enable remote control (password protected)
 allow_remote_control password
 
-# Option 1: Allow setting the background image with a password
-remote_control_password "missingno" set-background-image
+# Option 1: Allow setting the background image and adaptive text colors with a password
+remote_control_password "missingno" set-background-image set-colors
 
 # Option 2: Allow setting the background image without a password
 # (slightly less secure, a malicious actor could mess up your backgrounds)
-remote_control_password "" set-background-image
+remote_control_password "" set-background-image set-colors
 ```
 
 If you choose option 1 (recommended), you still need to pass your chosen password when running `pokemon`, this works using the environment variable `KITTY_RC_PASSWORD` - i.e. you can run `KITTY_RC_PASSWORD=missingno pokemon`, or set the variable in any other way using your method of choice.
+
+You can force Kitty text contrast mode with:
+- `POKEMON_TERMINAL_KITTY_TEXT_MODE=auto` (default, chooses based on image brightness)
+- `POKEMON_TERMINAL_KITTY_TEXT_MODE=light` (light text)
+- `POKEMON_TERMINAL_KITTY_TEXT_MODE=dark` (dark text)
+
+### Kitty + VS Code setup wizard (recommended)
+
+This repo includes an interactive setup wizard that:
+- sets Kitty as the default VS Code terminal profile (macOS),
+- lets you preview Pokemon backgrounds live while switching text contrast mode (`auto`, `light`, `dark`),
+- saves your selection and auto-applies it on every new Kitty shell.
+
+Run:
+
+```bash
+make kitty-setup
+```
+
+The wizard stores persisted settings in:
+- `~/.config/pokemon-terminal/kitty-profile.json`
+- `~/.zshrc` (autoload hook block)
+
+After running setup, open a new Kitty tab/window and your saved theme will load automatically.
 
 ## Adding Custom Images
 

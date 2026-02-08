@@ -14,7 +14,19 @@ def test_read_jsonc_valid(tmp_path):
     assert kitty_setup._read_jsonc_file(file_path) == {"a": 1}
 
 
-def test_read_jsonc_invalid_returns_none(tmp_path):
+def test_read_jsonc_trailing_comma_object(tmp_path):
     file_path = tmp_path / "settings.json"
     file_path.write_text('{"a": 1,}', encoding="utf-8")
+    assert kitty_setup._read_jsonc_file(file_path) == {"a": 1}
+
+
+def test_read_jsonc_trailing_comma_array(tmp_path):
+    file_path = tmp_path / "settings.json"
+    file_path.write_text('{"a": [1, 2,],}', encoding="utf-8")
+    assert kitty_setup._read_jsonc_file(file_path) == {"a": [1, 2]}
+
+
+def test_read_jsonc_invalid_returns_none(tmp_path):
+    file_path = tmp_path / "settings.json"
+    file_path.write_text('{"a": 1,,}', encoding="utf-8")
     assert kitty_setup._read_jsonc_file(file_path) is None

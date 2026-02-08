@@ -49,6 +49,42 @@ def _strip_json_comments(text: str) -> str:
     return re.sub(pattern, replacer, text)
 
 
+def _strip_trailing_commas(text: str) -> str:
+    output = []
+    in_string = False
+    string_quote = ""
+    escape = False
+
+    for i, char in enumerate(text):
+        if in_string:
+            output.append(char)
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == string_quote:
+                in_string = False
+                string_quote = ""
+            continue
+
+        if char in {'"', "'"}:
+            in_string = True
+            string_quote = char
+            output.append(char)
+            continue
+
+        if char == ",":
+            j = i + 1
+            while j < len(text) and text[j].isspace():
+                j += 1
+            if j < len(text) and text[j] in "]}":
+                continue
+
+        output.append(char)
+
+    return "".join(output)
+
+
 def _read_jsonc_file(path: Path):
     if not path.exists():
         return {}
@@ -57,7 +93,8 @@ def _read_jsonc_file(path: Path):
             raw = handle.read().strip()
         if not raw:
             return {}
-        return json.loads(_strip_json_comments(raw))
+        normalized = _strip_trailing_commas(_strip_json_comments(raw))
+        return json.loads(normalized)
     except OSError:
         return None
     except json.JSONDecodeError:

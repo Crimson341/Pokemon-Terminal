@@ -123,7 +123,9 @@ def _convert_to_png(path: str):
     if target.exists():
         return str(target)
 
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(
+        dir=str(target.parent), suffix=".png", delete=False
+    ) as tmp:
         tmp_path = Path(tmp.name)
 
     try:

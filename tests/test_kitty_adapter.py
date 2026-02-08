@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pokemonterminal.terminal.adapters import kitty
 from pokemonterminal.terminal.adapters.kitty import KittyProvider
 
@@ -57,3 +59,39 @@ def test_kitty_convert_png_passthrough(tmp_path):
     png = tmp_path / "x.png"
     png.write_bytes(b"\x89PNG\r\n\x1a\n")
     assert kitty._convert_to_png(str(png)) == str(png)
+
+
+def test_kitty_convert_uses_cache_directory_tmp_file(tmp_path, monkeypatch):
+    src = tmp_path / "x.jpg"
+    src.write_bytes(b"jpg")
+    target = tmp_path / "cache" / "out.png"
+    target.parent.mkdir(parents=True, exist_ok=True)
+
+    called = {}
+
+    class DummyTmp:
+        def __init__(self, name):
+            self.name = str(name)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    def fake_named_temporary_file(*, dir, suffix, delete):
+        called["dir"] = dir
+        return DummyTmp(Path(dir) / "tmp-convert.png")
+
+    def fake_run(args, check, capture_output):
+        Path(args[-1]).write_bytes(b"\x89PNG\r\n\x1a\n")
+
+    monkeypatch.setattr(kitty, "_cached_png_path", lambda _: target)
+    monkeypatch.setattr(kitty.tempfile, "NamedTemporaryFile", fake_named_temporary_file)
+    monkeypatch.setattr(kitty, "run", fake_run)
+
+    out = kitty._convert_to_png(str(src))
+
+    assert called["dir"] == str(target.parent)
+    assert out == str(target)
+    assert target.exists()
